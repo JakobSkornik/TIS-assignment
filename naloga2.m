@@ -1,7 +1,6 @@
 function [izhod, R, kodBela, kodCrna] = naloga2(vhod)
 
-  warning ("off", "all");
-  izhod = [];
+  izhod = char([]);
   RLE_bele = [];
   RLE_crne = [];
 
@@ -16,7 +15,7 @@ function [izhod, R, kodBela, kodCrna] = naloga2(vhod)
     endif
 
     RLE_bele = [RLE_bele, RLE(1:2:end)];
-    RLE_crne = [RLE_crne,RLE(2:2:end)];
+    RLE_crne = [RLE_crne, RLE(2:2:end)];
 
   endfor
 
@@ -25,13 +24,13 @@ function [izhod, R, kodBela, kodCrna] = naloga2(vhod)
 
   bele_ponovitve = histc(RLE_bele, unique(RLE_bele));
   bele_dolzine = unique(RLE_bele);
-  bele = sortrows([bele_dolzine; bele_ponovitve ./ numel(RLE_bele)]', [-2, 1]);
+  bele = sortrows([bele_dolzine; bele_ponovitve ./ numel(RLE_bele)]', [2, 1]);
 
   if numel(RLE_crne) > 0
 
     crne_ponovitve = histc(RLE_crne, unique(RLE_crne));
     crne_dolzine = unique(RLE_crne);
-    crne = sortrows([crne_dolzine; crne_ponovitve ./ numel(RLE_crne)]', [-2, 1]);
+    crne = sortrows([crne_dolzine; crne_ponovitve ./ numel(RLE_crne)]', [2, 1]);
 
   endif
   
@@ -39,7 +38,7 @@ function [izhod, R, kodBela, kodCrna] = naloga2(vhod)
   bele = build_HTree(bele);
   crne = [crne, zeros(size(crne))];
   crne = build_HTree(crne);
-
+  
   kodBela = sortrows(bele([1:numel(bele_dolzine)], [1, 5]), [2, 1]);
 
   if numel(RLE_crne) == 0
@@ -63,45 +62,40 @@ end
 
 function [input] = build_HTree(input)
 
-  max_recursion_depth (100000000, "local");
-
   if rows(input) > 1
 
-    [najmanjsi, row] = min(min(input(:,2),[],2));
+    vsota = 0;
 
-    i = row;
-    input(i,2) = input(i,2) + 1;
+    while vsota < 1
 
-    [najmanjsi, row] = min(min(input(:,2),[],2));
-    j = row;
-    input(j,2) = input(j,2) + 1;
+      [najmanjsi, row] = min(min(input(:,2),[],2));
+      i = row;
+      input(i,2) = input(i,2) + 1;
 
-    vsota = input(i,2) .+ input(j,2) .- 1.999999;
+      [najmanjsi2, row2] = min(min(input(:,2),[],2));
+      j = row2;
+      input(j,2) = input(j,2) + 1;
 
-    input = [input; [0,vsota,i,j]];
+      vsota = input(i,2) .+ input(j,2) .- 1.99999;
 
-    if vsota < 0.9999
+      input = [input; [0,vsota,i,j]];
 
-      input = build_HTree(input);
+    endwhile
 
-    else 
+    input = [input, zeros(rows(input), 1)];
+    k = rows(input);
+    i = input(k, 3);
+    j = input(k, 4);
 
-      input = [input, zeros(rows(input), 1)];
-      k = rows(input);
+    while i .+ j > 0
+
+      input(i, 5) = input(i, 5) .+ 1 .+ input(k,5);
+      input(j, 5) = input(j, 5) .+ 1 .+ input(k,5);
+      k--;
       i = input(k, 3);
       j = input(k, 4);
 
-      while i .+ j > 0
-
-        input(i, 5) = input(i, 5) + 1 + input(k,5);
-        input(j, 5) = input(j, 5) + 1 + input(k,5);
-        k--;
-        i = input(k, 3);
-        j = input(k, 4);
-
-      endwhile
-
-    endif
+    endwhile
 
   else
 
@@ -134,14 +128,16 @@ end
 
 function [output] = generate_output(white_code, black_code, vhod)
   
-  x = [];
+  x = char([]);
 
   for j = 1:rows(vhod)
     
     RLE = runlength(vhod(j,:));
     
     if vhod(j,1) == 0
+
       RLE = [0,RLE];
+
     endif
 
     for i = 1:length(RLE)
@@ -162,5 +158,5 @@ function [output] = generate_output(white_code, black_code, vhod)
     
   endfor
 
-  output = str2double(regexp(num2str(x),'\d','match'));
+  output = char(str2double(regexp(num2str(x),'\d','match')));
 end
